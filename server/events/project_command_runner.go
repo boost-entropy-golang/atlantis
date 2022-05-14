@@ -72,6 +72,12 @@ type EnvStepRunner interface {
 	Run(ctx command.ProjectContext, cmd string, value string, path string, envs map[string]string) (string, error)
 }
 
+// MultiEnvStepRunner runs multienv steps.
+type MultiEnvStepRunner interface {
+	// Run cmd in path.
+	Run(ctx command.ProjectContext, cmd string, path string, envs map[string]string) (string, error)
+}
+
 //go:generate pegomock generate -m --use-experimental-model-gen --package mocks -o mocks/mock_webhooks_sender.go WebhooksSender
 
 // WebhooksSender sends webhook.
@@ -189,6 +195,7 @@ type DefaultProjectCommandRunner struct {
 	VersionStepRunner          StepRunner
 	RunStepRunner              CustomStepRunner
 	EnvStepRunner              EnvStepRunner
+	MultiEnvStepRunner         MultiEnvStepRunner
 	PullApprovedChecker        runtime.PullApprovedChecker
 	WorkingDir                 WorkingDir
 	Webhooks                   WebhooksSender
@@ -302,7 +309,7 @@ func (p *DefaultProjectCommandRunner) doPolicyCheck(ctx command.ProjectContext) 
 
 	// we shouldn't attempt to clone this again. If changes occur to the pull request while the plan is happening
 	// that shouldn't affect this particular operation.
-	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace, ctx.RepoRelDir)
+	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace)
 	if err != nil {
 
 		// let's unlock here since something probably nuked our directory between the plan and policy check phase
@@ -364,7 +371,7 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx command.ProjectContext) (*model
 	defer unlockFn()
 
 	// Clone is idempotent so okay to run even if the repo was already cloned.
-	repoDir, hasDiverged, cloneErr := p.WorkingDir.Clone(ctx.Log, ctx.HeadRepo, ctx.Pull, ctx.Workspace, ctx.RepoRelDir)
+	repoDir, hasDiverged, cloneErr := p.WorkingDir.Clone(ctx.Log, ctx.HeadRepo, ctx.Pull, ctx.Workspace)
 	if cloneErr != nil {
 		if unlockErr := lockAttempt.UnlockFn(); unlockErr != nil {
 			ctx.Log.Err("error unlocking state after plan error: %v", unlockErr)
@@ -395,7 +402,7 @@ func (p *DefaultProjectCommandRunner) doPlan(ctx command.ProjectContext) (*model
 }
 
 func (p *DefaultProjectCommandRunner) doApply(ctx command.ProjectContext) (applyOut string, failure string, err error) {
-	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace, ctx.RepoRelDir)
+	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", "", errors.New("project has not been cloned–did you run plan?")
@@ -438,7 +445,7 @@ func (p *DefaultProjectCommandRunner) doApply(ctx command.ProjectContext) (apply
 }
 
 func (p *DefaultProjectCommandRunner) doVersion(ctx command.ProjectContext) (versionOut string, failure string, err error) {
-	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace, ctx.RepoRelDir)
+	repoDir, err := p.WorkingDir.GetWorkingDir(ctx.Pull.BaseRepo, ctx.Pull, ctx.Workspace)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", "", errors.New("project has not been cloned–did you run plan?")
@@ -493,6 +500,8 @@ func (p *DefaultProjectCommandRunner) runSteps(steps []valid.Step, ctx command.P
 			// We reset out to the empty string because we don't want it to
 			// be printed to the PR, it's solely to set the environment variable.
 			out = ""
+		case "multienv":
+			out, err = p.MultiEnvStepRunner.Run(ctx, step.RunCommand, absPath, envs)
 		}
 
 		if out != "" {
