@@ -13,7 +13,7 @@ require (
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568
 	github.com/go-ozzo/ozzo-validation v0.0.0-20170913164239-85dcd8368eba
-	github.com/go-redis/redis/v9 v9.0.0-beta.3
+	github.com/go-redis/redis/v9 v9.0.0-rc.1
 	github.com/go-test/deep v1.0.8
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-github/v31 v31.0.0
@@ -27,7 +27,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/mitchellh/colorstring v0.0.0-20150917214807-8631ce90f286
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/moby/moby v20.10.18+incompatible
+	github.com/moby/moby v20.10.19+incompatible
 	github.com/mohae/deepcopy v0.0.0-20170603005431-491d3605edfb
 	github.com/nlopes/slack v0.4.0
 	github.com/petergtz/pegomock v2.9.0+incompatible
@@ -91,7 +91,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
-	github.com/onsi/gomega v1.20.2 // indirect
+	github.com/onsi/gomega v1.21.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
